@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>خضار وطازج | متجر الخضار والفاكهة و إدارة المخزون</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Font: Cairo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            cairo: ['Cairo', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #F8FAFC;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #10b981;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between pb-24 md:pb-0">
+
+  <!-- Sticky Header -->
+  <header class="bg-white border-b border-slate-100 sticky top-0 z-30 shadow-sm transition-all duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        <div class="w-10 h-10 bg-brand-500 rounded-2xl flex items-center justify-center text-white text-xl shadow-md shadow-brand-500/20">
+          <i class="fa-solid fa-leaf"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-lg leading-tight text-slate-900">خضار وطازج</h1>
+          <p class="text-[10px] text-slate-400 font-semibold">من المزرعة إلى باب بيتك</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Protected Admin Toggle Button -->
+        <button onclick="handleAdminAccess()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition shadow-sm">
+          <i class="fa-solid fa-lock text-xs"></i>
+          <span>لوحة التحكم</span>
+        </button>
+
+        <a href="tel:01000000000" class="hidden md:flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition">
+          <i class="fa-solid fa-phone text-brand-600"></i>
+          <span>اتصل بنا</span>
+        </a>
+
+        <button onclick="toggleCartDrawer(true)" class="relative bg-brand-50 hover:bg-brand-100 text-brand-700 px-3.5 py-2 rounded-xl flex items-center gap-2 font-bold text-sm transition">
+          <i class="fa-solid fa-basket-shopping text-base"></i>
+          <span class="hidden xs:inline">السلة</span>
+          <span id="cart-badge" class="bg-brand-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">0</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Protected Admin Panel (Hidden by Default) -->
+  <section id="admin-panel" class="hidden bg-slate-900 text-white py-6 border-b border-slate-800 transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-boxes-stacked text-brand-500 text-xl"></i>
+          <h2 class="text-lg font-bold">لوحة إدارة المخزون والأسعار</h2>
+          <span class="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-md border border-emerald-500/30">مسجل كمسؤول</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="adminLogout()" class="text-xs bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold px-3 py-1.5 rounded-xl border border-rose-500/30 transition">
+            تسجيل خروج <i class="fa-solid fa-right-from-bracket mr-1"></i>
+          </button>
+          <button onclick="toggleAdminPanel(false)" class="text-slate-400 hover:text-white text-sm">
+            إغلاق <i class="fa-solid fa-xmark ml-1"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Form: Add New Product -->
+      <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700">
+        <h3 class="text-xs font-bold text-slate-300 uppercase mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-plus text-brand-500"></i> إضافة منتج جديد
+        </h3>
+        <form id="add-product-form" onsubmit="handleAddNewProduct(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+          <input type="text" id="new-p-name" required placeholder="اسم المنتج" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+          
+          <select id="new-p-cat" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+            <option value="vegetables">خضروات</option>
+            <option value="fruits">فواكه</option>
+            <option value="leafy">ورقيات</option>
+          </select>
+          
+          <input type="number" step="0.1" id="new-p-price" required placeholder="السعر (ج.م)" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+          
+          <input type="number" step="0.1" id="new-p-market-price" required placeholder="سعر السوق (ج.م)" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+          
+          <input type="number" step="0.5" id="new-p-stock" required placeholder="الكمية المتاحة (كجم)" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+          
+          <input type="text" id="new-p-image" placeholder="رابط الصورة (اختياري)" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+          
+          <button type="submit" class="bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs py-2 px-4 rounded-xl transition flex items-center justify-center gap-1">
+            <span>إضافة للمتجر</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Inventory Table -->
+      <div class="overflow-x-auto custom-scrollbar border border-slate-800 rounded-2xl">
+        <table class="w-full text-right text-xs">
+          <thead class="bg-slate-800/50 text-slate-400 font-bold border-b border-slate-800">
+            <tr>
+              <th class="p-3">اسم المنتج</th>
+              <th class="p-3">القسم</th>
+              <th class="p-3">سعر المتجر (ج.م)</th>
+              <th class="p-3">سعر السوق (ج.م)</th>
+              <th class="p-3">المخزون المتاح (كجم)</th>
+              <th class="p-3">الحالة</th>
+              <th class="p-3 text-center">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="admin-inventory-table" class="divide-y divide-slate-800/60">
+            <!-- Dynamic Content Driven by JS -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Admin Password Login Modal -->
+  <div id="admin-login-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+    <div onclick="closeAdminLoginModal()" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full mx-4 shadow-2xl z-10 space-y-4 relative border border-slate-100">
+      <div class="text-center space-y-2">
+        <div class="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center mx-auto text-xl shadow-lg shadow-slate-900/20">
+          <i class="fa-solid fa-user-shield"></i>
+        </div>
+        <h3 class="font-extrabold text-slate-900 text-lg">دخول لوحة التحكم</h3>
+        <p class="text-xs text-slate-400">يرجى إدخال كلمة السر الخاصة بالمسؤول للوصول لإدارة المخزون والأسعار.</p>
+      </div>
+
+      <form onsubmit="handleAdminLogin(event)" class="space-y-3">
+        <div>
+          <input type="password" id="admin-pass-input" required placeholder="كلمة السر" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none text-sm text-center font-bold tracking-widest transition">
+          <p id="admin-login-error" class="text-rose-500 text-[11px] font-bold mt-1 text-center hidden">كلمة السر غير صحيحة!</p>
+        </div>
+
+        <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition text-sm">
+          تسجيل الدخول
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Hero Section -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+    <div class="relative bg-gradient-to-l from-brand-700 to-brand-500 rounded-3xl p-6 sm:p-10 text-white overflow-hidden shadow-xl shadow-brand-500/10">
+      <div class="relative z-10 max-w-xl space-y-3">
+        <span class="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full inline-block">
+          ⚡ خدمة التجميع والتوصيل اليومي
+        </span>
+        <h2 class="text-2xl sm:text-4xl font-extrabold leading-tight">
+          خضروات وفواكه طازجة بسعر الجملة
+        </h2>
+        <p class="text-brand-50 text-xs sm:text-sm leading-relaxed opacity-90">
+          نجمع طلبات الأهالي يومياً ونشتريها طازجة صباحاً من أجوَد المحاصيل لضمان أعلى جودة وأقل سعر.
+        </p>
+      </div>
+      <i class="fa-solid fa-carrot absolute -bottom-6 -left-6 text-white/10 text-9xl pointer-events-none transform -rotate-45"></i>
+    </div>
+  </section>
+
+  <!-- Main Content & Catalog -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+    
+    <!-- Category Filter Controls -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-4 custom-scrollbar mb-6">
+      <button onclick="filterCategory('all')" class="category-btn active border px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition shadow-sm bg-brand-600 text-white border-brand-600" data-cat="all">
+        <i class="fa-solid fa-border-all ml-1.5"></i> الكل
+      </button>
+      <button onclick="filterCategory('vegetables')" class="category-btn border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition" data-cat="vegetables">
+        <i class="fa-solid fa-carrot ml-1.5 text-orange-500"></i> خضروات طازجة
+      </button>
+      <button onclick="filterCategory('fruits')" class="category-btn border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition" data-cat="fruits">
+        <i class="fa-solid fa-apple-whole ml-1.5 text-red-500"></i> فواكه الموسم
+      </button>
+      <button onclick="filterCategory('leafy')" class="category-btn border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition" data-cat="leafy">
+        <i class="fa-solid fa-seedling ml-1.5 text-emerald-500"></i> ورقيات وأعشاب
+      </button>
+    </div>
+
+    <!-- Products Grid -->
+    <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+      <!-- Dynamic Javascript Generation -->
+    </div>
+
+  </main>
+
+  <!-- Mobile Floating Cart Bar -->
+  <div class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 p-4 shadow-2xl z-20 md:hidden">
+    <div class="flex items-center justify-between gap-4">
+      <div>
+        <span class="text-[11px] font-bold text-slate-400 block">الإجمالي المبدئي</span>
+        <span class="text-xl font-extrabold text-brand-600"><span id="mobile-total">0</span> ج.م</span>
+      </div>
+      <button onclick="toggleCartDrawer(true)" class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-6 rounded-2xl shadow-lg shadow-brand-500/30 flex items-center gap-2 text-sm">
+        <i class="fa-solid fa-basket-shopping"></i>
+        <span>عرض السلة</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Cart & Checkout Slide-over Drawer -->
+  <div id="cart-drawer" class="fixed inset-0 z-50 overflow-hidden hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+    <div onclick="toggleCartDrawer(false)" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"></div>
+
+    <div class="fixed inset-y-0 left-0 max-w-full flex">
+      <div class="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between">
+        
+        <!-- Drawer Header -->
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-basket-shopping text-brand-600 text-lg"></i>
+            <h3 class="font-bold text-slate-800 text-base">سلة المشتريات</h3>
+          </div>
+          <button onclick="toggleCartDrawer(false)" class="text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <!-- Drawer Content (Cart Items + Order Form) -->
+        <div class="flex-1 overflow-y-auto p-5 custom-scrollbar space-y-6">
+          
+          <!-- Selected Items List -->
+          <div>
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">المنتجات المطلوبة</h4>
+            <div id="cart-items-container" class="space-y-3">
+              <!-- Cart Items Inserted Dynamically -->
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <hr class="border-slate-100">
+
+          <!-- Order Form Inputs -->
+          <form id="order-form" class="space-y-4" onsubmit="event.preventDefault(); submitOrder();">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">بيانات التوصيل</h4>
+            
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">الاسم بالكامل *</label>
+              <input type="text" id="cust-name" required placeholder="أدخل اسمك" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm transition">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">العنوان التفصيلي *</label>
+              <input type="text" id="cust-address" required placeholder="المنطقة / الشارع / رقم العمارة" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm transition">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">موعد التوصيل المفضل</label>
+              <select id="cust-time" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm bg-white transition">
+                <option value="الفترة الصباحية (10 صباحاً - 1 ظهراً)">الفترة الصباحية (10 صباحاً - 1 ظهراً)</option>
+                <option value="الفترة المسائية (5 مساءً - 8 مساءً)">الفترة المسائية (5 مساءً - 8 مساءً)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">ملاحظات خاصة للطلب</label>
+              <textarea id="cust-notes" rows="2" placeholder="أي تفاصيل إضافية (مثال: الفاكهة متوسطة النضج)" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm transition resize-none"></textarea>
+            </div>
+          </form>
+
+        </div>
+
+        <!-- Drawer Footer / Checkout -->
+        <div class="p-5 border-t border-slate-100 bg-slate-50 space-y-3">
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-slate-500 font-semibold">المجموع الكلي:</span>
+            <span class="text-xl font-extrabold text-brand-600"><span id="drawer-total">0</span> ج.م</span>
+          </div>
+
+          <button onclick="submitOrder()" id="submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed">
+            <i class="fa-brands fa-whatsapp text-lg"></i>
+            <span>إرسال الطلب خصماً من المخزون</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-100 py-6 text-center text-xs text-slate-400 mt-auto">
+    <div class="max-w-7xl mx-auto px-4">
+      <p>© 2026 خضار وطازج - جميع الحقوق محفوظة</p>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script>
+    // Configuration
+    const WHATSAPP_NUMBER = "201027376984"; // 🔗 يمكنك تغيير رقم الواتساب من هنا
+    const ADMIN_PASSWORD = "123456"; // 🔐 يمكنك تغيير كلمة السر من هنا
+
+    // Application Authentication State
+    let isAdminAuthenticated = false;
+
+    // Products Database with Stock Quantities
+    let products = [
+      { id: 1, category: 'vegetables', name: 'طماطم بلدي طازجة', price: 15, marketPrice: 20, stockQuantity: 30, image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&q=80' },
+      { id: 2, category: 'vegetables', name: 'بطاطس تحمير ممتازة', price: 20, marketPrice: 25, stockQuantity: 25, image: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&q=80' },
+      { id: 3, category: 'vegetables', name: 'خيار بلدي طازج', price: 18, marketPrice: 22, stockQuantity: 0, image: 'OIP (1).webp' },
+      { id: 4, category: 'vegetables', name: 'بصل أحمر خزين', price: 25, marketPrice: 30, stockQuantity: 40, image: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cf?w=400&q=80' },
+      { id: 5, category: 'fruits', name: 'موز بلدي مسكر', price: 25, marketPrice: 30, stockQuantity: 15, image: 'https://images.unsplash.com/photo-1603833665858-e61d17a86224?w=400&q=80' },
+      { id: 6, category: 'fruits', name: 'تفاح أحمر فاخر', price: 45, marketPrice: 55, stockQuantity: 0, image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400&q=80' },
+      { id: 7, category: 'fruits', name: 'برتقال عصير طازج', price: 15, marketPrice: 18, stockQuantity: 20, image: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=400&q=80' },
+      { id: 8, category: 'leafy', name: 'جرجير بلدي طازج', price: 5, marketPrice: 7, stockQuantity: 50, image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&q=80' },
+      { id: 9, category: 'leafy', name: 'خس كابوتشا', price: 10, marketPrice: 12, stockQuantity: 12, image: 'https://images.unsplash.com/photo-1556801712-76c8eb07bbc9?w=400&q=80' }
+    ];
+
+    // State Management
+    let cart = {};
+    let activeCategory = 'all';
+
+    // Weights Available for Selection
+    const WEIGHT_OPTIONS = [0.5, 1, 1.5, 2, 3, 5];
+
+    // Initialize Application
+    document.addEventListener('DOMContentLoaded', () => {
+      refreshAppUI();
+    });
+
+    // Admin Access Control Logic
+    function handleAdminAccess() {
+      if (isAdminAuthenticated) {
+        toggleAdminPanel(true);
+      } else {
+        openAdminLoginModal();
+      }
+    }
+
+    function openAdminLoginModal() {
+      document.getElementById('admin-pass-input').value = '';
+      document.getElementById('admin-login-error').classList.add('hidden');
+      document.getElementById('admin-login-modal').classList.remove('hidden');
+      document.getElementById('admin-pass-input').focus();
+    }
+
+    function closeAdminLoginModal() {
+      document.getElementById('admin-login-modal').classList.add('hidden');
+    }
+
+    function handleAdminLogin(e) {
+      e.preventDefault();
+      const inputPass = document.getElementById('admin-pass-input').value;
+      if (inputPass === ADMIN_PASSWORD) {
+        isAdminAuthenticated = true;
+        closeAdminLoginModal();
+        toggleAdminPanel(true);
+      } else {
+        document.getElementById('admin-login-error').classList.remove('hidden');
+      }
+    }
+
+    function adminLogout() {
+      isAdminAuthenticated = false;
+      toggleAdminPanel(false);
+    }
+
+    function toggleAdminPanel(show) {
+      const panel = document.getElementById('admin-panel');
+      if (show && isAdminAuthenticated) {
+        panel.classList.remove('hidden');
+        panel.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        panel.classList.add('hidden');
+      }
+    }
+
+    // Helper: Calculate Availability
+    function isAvailable(product) {
+      return product.stockQuantity > 0;
+    }
+
+    // Refresh UI Components
+    function refreshAppUI() {
+      renderProducts();
+      renderAdminTable();
+      updateCartState();
+    }
+
+    // Render Products Catalog Grid
+    function renderProducts() {
+      const grid = document.getElementById('products-grid');
+      const filtered = activeCategory === 'all' 
+        ? products 
+        : products.filter(p => p.category === activeCategory);
+
+      grid.innerHTML = filtered.map(p => {
+        const available = isAvailable(p);
+        const selectedWeight = cart[p.id] ? cart[p.id].weight : 0;
+
+        // Dynamic Badge Status
+        const statusBadge = available 
+          ? `<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm"><i class="fa-solid fa-circle text-[6px]"></i> متوفر</span>`
+          : `<span class="bg-rose-100 text-rose-600 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm"><i class="fa-solid fa-circle text-[6px]"></i> غير متوفر</span>`;
+
+        // Generate Valid Weight Options based on remaining stock
+        let selectOptionsHtml = '';
+        if (available) {
+          selectOptionsHtml += `<option value="0" ${selectedWeight === 0 ? 'selected' : ''}>اطلب</option>`;
+          WEIGHT_OPTIONS.forEach(w => {
+            if (w <= p.stockQuantity) {
+              selectOptionsHtml += `<option value="${w}" ${selectedWeight === w ? 'selected' : ''}>${w} كيلو</option>`;
+            }
+          });
+        } else {
+          selectOptionsHtml = `<option selected disabled>نفدت الكمية</option>`;
+        }
+
+        return `
+          <div class="bg-white rounded-3xl p-3.5 border border-slate-100 shadow-sm transition-all duration-200 flex flex-col justify-between ${!available ? 'opacity-75' : 'hover:shadow-md'}">
+            <div>
+              <div class="relative overflow-hidden rounded-2xl mb-3 h-40 bg-slate-100">
+                <img src="${p.image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&q=80'}" alt="${p.name}" class="w-full h-full object-cover ${!available ? 'grayscale opacity-80' : ''}">
+                <div class="absolute top-2 right-2">
+                  ${statusBadge}
+                </div>
+              </div>
+              
+              <div class="flex items-start justify-between gap-1 mb-1">
+                <h3 class="font-bold text-slate-800 text-sm">${p.name}</h3>
+                <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md whitespace-nowrap">
+                  المتبقي: ${p.stockQuantity} كجم
+                </span>
+              </div>
+              
+              <!-- Price Comparison -->
+              <div class="flex items-center gap-2 mt-1 mb-2">
+                <span class="text-brand-600 font-extrabold text-sm">${p.price} ج.م <span class="text-[10px] text-slate-400 font-normal">/ كيلو</span></span>
+                <span class="text-slate-400 text-xs line-through">في السوق: ${p.marketPrice} ج.م</span>
+              </div>
+            </div>
+
+            <div class="mt-2 pt-3 border-t border-slate-50 flex items-center justify-between gap-2">
+              <label class="text-xs font-bold text-slate-400">الوزن:</label>
+              <select 
+                onchange="updateCartItem(${p.id}, this.value)" 
+                ${!available ? 'disabled' : ''} 
+                class="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
+                ${selectOptionsHtml}
+              </select>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render Admin Management Panel Table
+    function renderAdminTable() {
+      const tbody = document.getElementById('admin-inventory-table');
+      tbody.innerHTML = products.map(p => {
+        const available = isAvailable(p);
+        return `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="p-3 font-bold text-white">${p.name}</td>
+            <td class="p-3 text-slate-400">${getCategoryLabel(p.category)}</td>
+            <td class="p-3">
+              <input type="number" step="0.1" value="${p.price}" onchange="updateProductData(${p.id}, 'price', this.value)" class="w-20 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-brand-400 font-bold focus:outline-none focus:border-brand-500">
+            </td>
+            <td class="p-3">
+              <input type="number" step="0.1" value="${p.marketPrice}" onchange="updateProductData(${p.id}, 'marketPrice', this.value)" class="w-20 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-400 focus:outline-none focus:border-brand-500">
+            </td>
+            <td class="p-3">
+              <input type="number" step="0.5" min="0" value="${p.stockQuantity}" onchange="updateProductData(${p.id}, 'stockQuantity', this.value)" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-bold focus:outline-none focus:border-brand-500">
+            </td>
+            <td class="p-3">
+              ${available 
+                ? `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-check text-[10px]"></i> متوفر</span>` 
+                : `<span class="text-rose-400 font-bold"><i class="fa-solid fa-xmark text-[10px]"></i> غير متوفر</span>`
+              }
+            </td>
+            <td class="p-3 text-center">
+              <button onclick="deleteProduct(${p.id})" class="text-rose-400 hover:text-rose-300 p-1 rounded-lg transition" title="حذف المنتج">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Helper for Category Translation
+    function getCategoryLabel(cat) {
+      if (cat === 'vegetables') return 'خضروات';
+      if (cat === 'fruits') return 'فواكه';
+      if (cat === 'leafy') return 'ورقيات';
+      return cat;
+    }
+
+    // Filter Products Category
+    function filterCategory(cat) {
+      activeCategory = cat;
+      document.querySelectorAll('.category-btn').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.className = 'category-btn active border px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition shadow-sm bg-brand-600 text-white border-brand-600';
+        } else {
+          btn.className = 'category-btn border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition';
+        }
+      });
+      renderProducts();
+    }
+
+    // Update Product Info from Admin Panel
+    function updateProductData(productId, key, rawValue) {
+      if (!isAdminAuthenticated) return;
+      const val = parseFloat(rawValue);
+      if (isNaN(val) || val < 0) return;
+
+      const product = products.find(p => p.id === productId);
+      if (product) {
+        product[key] = val;
+
+        // Reset cart item if selected weight now exceeds new stock quantity
+        if (key === 'stockQuantity' && cart[productId]) {
+          if (cart[productId].weight > product.stockQuantity) {
+            delete cart[productId];
+          }
+        }
+        refreshAppUI();
+      }
+    }
+
+    // Add New Product via Admin
+    function handleAddNewProduct(e) {
+      e.preventDefault();
+      if (!isAdminAuthenticated) return;
+
+      const name = document.getElementById('new-p-name').value.trim();
+      const category = document.getElementById('new-p-cat').value;
+      const price = parseFloat(document.getElementById('new-p-price').value);
+      const marketPrice = parseFloat(document.getElementById('new-p-market-price').value);
+      const stockQuantity = parseFloat(document.getElementById('new-p-stock').value);
+      const image = document.getElementById('new-p-image').value.trim();
+
+      if (!name || isNaN(price) || isNaN(marketPrice) || isNaN(stockQuantity)) return;
+
+      const newProduct = {
+        id: Date.now(),
+        name,
+        category,
+        price,
+        marketPrice,
+        stockQuantity,
+        image: image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&q=80'
+      };
+
+      products.unshift(newProduct);
+      document.getElementById('add-product-form').reset();
+      refreshAppUI();
+    }
+
+    // Delete Product via Admin
+    function deleteProduct(productId) {
+      if (!isAdminAuthenticated) return;
+      if (confirm('هل أنت تأكد من رغبتك في حذف هذا المنتج؟')) {
+        products = products.filter(p => p.id !== productId);
+        delete cart[productId];
+        refreshAppUI();
+      }
+    }
+
+    // Cart Management
+    function updateCartItem(productId, weightStr) {
+      const weight = parseFloat(weightStr);
+      const product = products.find(p => p.id === productId);
+
+      if (!product || !isAvailable(product) || isNaN(weight) || weight === 0) {
+        delete cart[productId];
+      } else {
+        // Enforce stock upper boundary validation
+        const validWeight = Math.min(weight, product.stockQuantity);
+        cart[productId] = {
+          id: productId,
+          name: product.name,
+          price: product.price,
+          weight: validWeight,
+          total: product.price * validWeight
+        };
+      }
+      updateCartState();
+    }
+
+    // Sync Cart State to UI
+    function updateCartState() {
+      const items = Object.values(cart);
+      const grandTotal = items.reduce((sum, item) => sum + item.total, 0);
+      const itemCount = items.length;
+
+      document.getElementById('mobile-total').textContent = grandTotal;
+      document.getElementById('drawer-total').textContent = grandTotal;
+      document.getElementById('cart-badge').textContent = itemCount;
+
+      document.getElementById('submit-btn').disabled = itemCount === 0;
+
+      const container = document.getElementById('cart-items-container');
+      if (itemCount === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-slate-400 space-y-2">
+            <i class="fa-solid fa-basket-shopping text-3xl opacity-40"></i>
+            <p class="text-xs font-semibold">السلة فارغة حالياً</p>
+          </div>
+        `;
+      } else {
+        container.innerHTML = items.map(item => `
+          <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100 text-xs">
+            <div>
+              <p class="font-bold text-slate-800">${item.name}</p>
+              <p class="text-slate-400 font-semibold mt-0.5">${item.weight} كيلو × ${item.price} ج.م</p>
+            </div>
+            <span class="font-extrabold text-brand-600 text-sm">${item.total} ج.م</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function toggleCartDrawer(show) {
+      const drawer = document.getElementById('cart-drawer');
+      if (show) drawer.classList.remove('hidden');
+      else drawer.classList.add('hidden');
+    }
+
+    // Automated Stock Reduction on Order Submission
+    function submitOrder() {
+      const name = document.getElementById('cust-name').value.trim();
+      const address = document.getElementById('cust-address').value.trim();
+      const time = document.getElementById('cust-time').value;
+      const notes = document.getElementById('cust-notes').value.trim();
+
+      if (!name || !address) {
+        alert('يرجى ملء الاسم والعنوان بالتفصيل لاستكمال الطلب.');
+        return;
+      }
+
+      const items = Object.values(cart);
+      if (items.length === 0) {
+        alert('السلة فارغة!');
+        return;
+      }
+
+      // Verify stock availability prior to submission
+      for (let item of items) {
+        const prod = products.find(p => p.id === item.id);
+        if (!prod || prod.stockQuantity < item.weight) {
+          alert(`عذراً، الكمية المتاحة من ${item.name} غير كافية لطلبك.`);
+          refreshAppUI();
+          return;
+        }
+      }
+
+      let grandTotal = 0;
+      let orderListText = "";
+
+      // Deduct requested quantity from product stock
+      items.forEach(item => {
+        const prod = products.find(p => p.id === item.id);
+        if (prod) {
+          prod.stockQuantity = Math.max(0, prod.stockQuantity - item.weight);
+        }
+        orderListText += `• *${item.name}*: ${item.weight} كيلو (${item.total} ج.م)\n`;
+        grandTotal += item.total;
+      });
+
+      // Construct WhatsApp Payload
+      let message = `🛒 *طلب خضار وفاكهة جديد*\n`;
+      message += `----------------------------------\n`;
+      message += `👤 *الاسم:* ${name}\n`;
+      message += `📍 *العنوان:* ${address}\n`;
+      message += `⏰ *التوصيل:* ${time}\n`;
+      if (notes) message += `📝 *ملاحظات:* ${notes}\n`;
+      message += `----------------------------------\n`;
+      message += `📋 *الطلبات:*\n${orderListText}`;
+      message += `----------------------------------\n`;
+      message += `💰 *الإجمالي النهائي:* ${grandTotal} ج.م`;
+
+      // Clear Cart and UI Update
+      cart = {};
+      refreshAppUI();
+      toggleCartDrawer(false);
+
+      // Open WhatsApp Link
+      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+    }
+  </script>
+</body>
+</html>
