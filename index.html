@@ -80,7 +80,7 @@
           <span>لوحة التحكم</span>
         </button>
 
-        <a href="tel:01027376984" class="hidden md:flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition">
+        <a href="tel:01000000000" class="hidden md:flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition">
           <i class="fa-solid fa-phone text-brand-600"></i>
           <span>اتصل بنا</span>
         </a>
@@ -105,7 +105,11 @@
           <h2 class="text-lg font-bold">لوحة إدارة المخزون والأسعار</h2>
           <span class="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-md border border-emerald-500/30">مسجل كمسؤول</span>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3">
+          <button onclick="resetDefaultData()" class="text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold px-3 py-1.5 rounded-xl border border-amber-500/30 transition flex items-center gap-1" title="استعادة البيانات الافتراضية">
+            <i class="fa-solid fa-rotate-right text-[10px]"></i>
+            <span>إعادة ضبط المصنع</span>
+          </button>
           <button onclick="adminLogout()" class="text-xs bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold px-3 py-1.5 rounded-xl border border-rose-500/30 transition">
             تسجيل خروج <i class="fa-solid fa-right-from-bracket mr-1"></i>
           </button>
@@ -338,14 +342,15 @@
   <!-- Application Logic -->
   <script>
     // Configuration
-    const WHATSAPP_NUMBER = "201027376984"; // 🔗 يمكنك تغيير رقم الواتساب من هنا
-    const ADMIN_PASSWORD = "123456"; // 🔐 يمكنك تغيير كلمة السر من هنا
+    const WHATSAPP_NUMBER = "201027376984";
+    const ADMIN_PASSWORD = "123456"; // 🔐 كلمة سر لوحة التحكم
+    const STORAGE_KEY = "store_products_data"; // مفتاح حفظ البيانات في LocalStorage
 
     // Application Authentication State
     let isAdminAuthenticated = false;
 
-    // Products Database with Stock Quantities
-    let products = [
+    // Initial Default Seed Products Database
+    const defaultProducts = [
       { id: 1, category: 'vegetables', name: 'طماطم بلدي طازجة', price: 15, marketPrice: 20, stockQuantity: 30, image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&q=80' },
       { id: 2, category: 'vegetables', name: 'بطاطس تحمير ممتازة', price: 20, marketPrice: 25, stockQuantity: 25, image: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&q=80' },
       { id: 3, category: 'vegetables', name: 'خيار بلدي طازج', price: 18, marketPrice: 22, stockQuantity: 0, image: 'OIP (1).webp' },
@@ -357,6 +362,39 @@
       { id: 9, category: 'leafy', name: 'خس كابوتشا', price: 10, marketPrice: 12, stockQuantity: 12, image: 'https://images.unsplash.com/photo-1556801712-76c8eb07bbc9?w=400&q=80' }
     ];
 
+    // Main Products Dynamic Array
+    let products = [];
+
+    // LocalStorage Initialization & Synchronization
+    function loadProductsFromStorage() {
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      if (savedData) {
+        try {
+          products = JSON.parse(savedData);
+        } catch (e) {
+          console.error("Error parsing stored products, re-initializing...", e);
+          products = [...defaultProducts];
+          saveProductsToStorage();
+        }
+      } else {
+        products = [...defaultProducts];
+        saveProductsToStorage();
+      }
+    }
+
+    function saveProductsToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+    }
+
+    function resetDefaultData() {
+      if (confirm('هل أنت تأكد من استعادة البيانات الافتراضية؟ سيؤدي ذلك لمسح التعديلات والمنتجات المضافة جديداً.')) {
+        products = JSON.parse(JSON.stringify(defaultProducts));
+        saveProductsToStorage();
+        cart = {};
+        refreshAppUI();
+      }
+    }
+
     // State Management
     let cart = {};
     let activeCategory = 'all';
@@ -366,6 +404,7 @@
 
     // Initialize Application
     document.addEventListener('DOMContentLoaded', () => {
+      loadProductsFromStorage();
       refreshAppUI();
     });
 
@@ -447,7 +486,7 @@
         // Generate Valid Weight Options based on remaining stock
         let selectOptionsHtml = '';
         if (available) {
-          selectOptionsHtml += `<option value="0" ${selectedWeight === 0 ? 'selected' : ''}>اطلب</option>`;
+          selectOptionsHtml += `<option value="0" ${selectedWeight === 0 ? 'selected' : ''}>إلغاء</option>`;
           WEIGHT_OPTIONS.forEach(w => {
             if (w <= p.stockQuantity) {
               selectOptionsHtml += `<option value="${w}" ${selectedWeight === w ? 'selected' : ''}>${w} كيلو</option>`;
@@ -566,6 +605,8 @@
             delete cart[productId];
           }
         }
+        
+        saveProductsToStorage();
         refreshAppUI();
       }
     }
@@ -595,6 +636,7 @@
       };
 
       products.unshift(newProduct);
+      saveProductsToStorage();
       document.getElementById('add-product-form').reset();
       refreshAppUI();
     }
@@ -605,6 +647,7 @@
       if (confirm('هل أنت تأكد من رغبتك في حذف هذا المنتج؟')) {
         products = products.filter(p => p.id !== productId);
         delete cart[productId];
+        saveProductsToStorage();
         refreshAppUI();
       }
     }
@@ -709,6 +752,9 @@
         orderListText += `• *${item.name}*: ${item.weight} كيلو (${item.total} ج.م)\n`;
         grandTotal += item.total;
       });
+
+      // Persist stock reduction to LocalStorage
+      saveProductsToStorage();
 
       // Construct WhatsApp Payload
       let message = `🛒 *طلب خضار وفاكهة جديد*\n`;
